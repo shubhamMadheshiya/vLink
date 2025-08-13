@@ -1,120 +1,157 @@
 pipeline {
-    
-	agent any
-tools {
-	    maven "MAVEN3"
-	    jdk "JDK17"
-	}
-    environment {
-        NEXUS_VERSION = "nexus3"
-        NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "IP:8081"
-        NEXUS_REPOSITORY = "vprofile-release"
-	NEXUS_REPO_ID    = "vprofile-release"
-        NEXUS_CREDENTIAL_ID = "nexuslogin"
-        ARTVERSION = "${env.BUILD_ID}"
+    agent any
+    tools {
+        maven 'MAVEN3.9'
+        jdk 'JDK17'
     }
-	
-    stages{
-        
-        stage('BUILD'){
+
+    environment {
+        TEAMS_WEBHOOK = 'https://mmmutgkp.webhook.office.com/webhookb2/acd9b1e9-7637-4f8a-9611-9546f4a0cae9@d0732ed6-a89f-488d-b29d-e5e9e7cdde5c/JenkinsCI/41f7c0d803d14461af0c74fe5834c1e6/54066a31-27ea-43fc-8f80-fa31f39edb6c/V2-EDRWdM70sVIS33GCWvQvZzNAFY9akRCo6Y6PoedFYQ1'
+        NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085/repository/vlink-image/'
+        DOCKER_IMAGE_NAME = 'vlink-image/vlink'
+    }
+
+    stages {
+        stage('Fetch code') {
             steps {
-                sh 'mvn clean install -DskipTests'
-            }
-            post {
-                success {
-                    echo 'Now Archiving...'
-                    archiveArtifacts artifacts: '**/target/*.war'
-                }
+                echo 'Fetching code...'
+                git branch: 'main', url: 'https://github.com/shubhamMadheshiya/vLink.git'
             }
         }
 
-	stage('UNIT TEST'){
+        stage('Build') {
             steps {
+                echo 'Building...'
+                sh 'mvn install -DskipTests'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing...'
                 sh 'mvn test'
             }
         }
 
-	stage('INTEGRATION TEST'){
+        stage('Checkstyle') {
             steps {
-                sh 'mvn verify -DskipUnitTests'
-            }
-        }
-		
-        stage ('CODE ANALYSIS WITH CHECKSTYLE'){
-            steps {
+                echo 'Running Checkstyle...'
                 sh 'mvn checkstyle:checkstyle'
             }
-            post {
-                success {
-                    echo 'Generated Analysis Result'
-                }
-            }
         }
 
-        stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
-             scannerHome = tool 'sonarscanner4'
-          }
-
-          steps {
-            withSonarQubeEnv('sonar-pro') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=vprofile-repo \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+        stage('Code Analysis with SonarQube') {
+            environment {
+                scannerHome = tool 'sonar7.2'
             }
-
-            timeout(time: 10, unit: 'MINUTES') {
-               waitForQualityGate abortPipeline: true
-            }
-          }
-        }
-
-        stage("Publish to Nexus Repository Manager") {
             steps {
-                script {
-                    pom = readMavenPom file: "pom.xml";
-                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
-                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
-                    artifactPath = filesByGlob[0].path;
-                    artifactExists = fileExists artifactPath;
-                    if(artifactExists) {
-                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version} ARTVERSION";
-                        nexusArtifactUploader(
-                            nexusVersion: NEXUS_VERSION,
-                            protocol: NEXUS_PROTOCOL,
-                            nexusUrl: NEXUS_URL,
-                            groupId: pom.groupId,
-                            version: ARTVERSION,
-                            repository: NEXUS_REPOSITORY,
-                            credentialsId: NEXUS_CREDENTIAL_ID,
-                            artifacts: [
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: artifactPath,
-                                type: pom.packaging],
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: "pom.xml",
-                                type: "pom"]
-                            ]
-                        );
-                    } 
-		    else {
-                        error "*** File: ${artifactPath}, could not be found";
-                    }
+                withSonarQubeEnv('sonarserver') {
+                    sh '''${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=vLink \
+                        -Dsonar.projectName=vLink-repo \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
                 }
             }
         }
 
+        stage('SonarQube Quality Gate') {
+            steps {
+                echo 'Waiting for SonarQube Quality Gate...'
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
 
+        stage('Publish WAR to Nexus Maven Repo') {
+            steps {
+                nexusArtifactUploader(
+                    nexusVersion: 'nexus3',
+                    protocol: 'http',
+                    nexusUrl: '192.168.56.11:9081',
+                    groupId: 'QA',
+                    version: "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}",
+                    repository: 'vLink-repo',
+                    credentialsId: 'nexuslogin',
+                    artifacts: [
+                        [
+                            artifactId: 'vLink',
+                            classifier: '',
+                            file: 'target/vprofile-v2.war',
+                            type: 'war'
+                        ]
+                    ]
+                )
+            }
+        }
+
+       // Build Docker Image
+stage('Build Docker Image') {
+    steps {
+        script {
+            echo 'Building Docker image...'
+            dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}")
+        }
+    }
+}
+
+// Push Docker Image to Nexus Docker Repo
+stage('Push Docker Image to Nexus Docker Repo') {
+    steps {
+        script {
+            echo 'Pushing Docker image to Nexus...'
+            docker.withRegistry("http://${NEXUS_DOCKER_REGISTRY}", 'nexuslogin') {
+                dockerImage.push()
+                dockerImage.push("latest") // optional
+            }
+        }
+    }
+}
+        stage('Deploy') {
+            steps {
+                echo 'Deploying...'
+            }
+        }
     }
 
+    post {
+        always {
+            script {
+                def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
+                def groupIdPath = "QA"
+                def artifactId = "vLink"
+                def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
+                def type = "war"
+                def artifactFileName = "${artifactId}-${version}.${type}"
+                def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
 
+                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
+                        message: """✅ **Success Build report**  
+                            **Job:** ${env.JOB_NAME}  
+                            **Build #:** ${env.BUILD_NUMBER}  
+                            **Artifact:** [${artifactFileName}](${nexusArtifactLink})  
+                            **Docker Image:** ${NEXUS_DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}  
+                            **Logs:** [View Console Output](${env.BUILD_URL}console)
+                        """,
+                        status: 'Success',
+                        color: '#B99976'
+                } else {
+                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
+                        message: """❌ **Failed Build Report**  
+                            **Job:** ${env.JOB_NAME}  
+                            **Build #:** ${env.BUILD_NUMBER}  
+                            **Logs:** [View Console Output](${env.BUILD_URL}console)
+                        """,
+                        status: 'Failure',
+                        color: '#B99976'
+                }
+            }
+        }
+    }
 }
