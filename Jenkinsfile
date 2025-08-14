@@ -130,6 +130,7 @@ pipeline {
                 def type = "war"
                 def artifactFileName = "${artifactId}-${version}.${type}"
                 def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
+                def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
 
                 if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
                     office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
@@ -137,7 +138,7 @@ pipeline {
                             **Job:** ${env.JOB_NAME}  
                             **Build #:** ${env.BUILD_NUMBER}  
                             **Artifact:** [${artifactFileName}](${nexusArtifactLink})  
-                            **Docker Image:** ${NEXUS_DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}  
+                            **Docker Image:** [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
                             **Logs:** [View Console Output](${env.BUILD_URL}console)
                         """,
                         status: 'Success',
