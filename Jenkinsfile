@@ -121,39 +121,40 @@ pipeline {
     }
 
     post {
-        always {
-            script {
-                def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
-                def groupIdPath = "QA"
-                def artifactId = "vLink"
-                def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
-                def type = "war"
-                def artifactFileName = "${artifactId}-${version}.${type}"
-                def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
-                def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
+    always {
+        script {
+            def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
+            def groupIdPath = "QA"
+            def artifactId = "vLink"
+            def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
+            def type = "war"
+            def artifactFileName = "${artifactId}-${version}.${type}"
+            def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
+            // Corrected Docker image link
+            def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:v2-vlink/${env.BUILD_NUMBER}"
 
-                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
-                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
-                        message: """✅ **Success Build report**  
-                            **Job:** ${env.JOB_NAME}  
-                            **Build #:** ${env.BUILD_NUMBER}  
-                            **Artifact:** [${artifactFileName}](${nexusArtifactLink})  
-                            **Docker Image:** [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
-                            **Logs:** [View Console Output](${env.BUILD_URL}console)
-                        """,
-                        status: 'Success',
-                        color: '#B99976'
-                } else {
-                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
-                        message: """❌ **Failed Build Report**  
-                            **Job:** ${env.JOB_NAME}  
-                            **Build #:** ${env.BUILD_NUMBER}  
-                            **Logs:** [View Console Output](${env.BUILD_URL}console)
-                        """,
-                        status: 'Failure',
-                        color: '#B99976'
-                }
+            if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+                office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
+                    message: """✅ **Success Build report**
+                        **Job:** ${env.JOB_NAME}
+                        **Build #:** ${env.BUILD_NUMBER}
+                        **Artifact:** [${artifactFileName}](${nexusArtifactLink})
+                        **Docker Image:** [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})
+                        **Logs:** [View Console Output](${env.BUILD_URL}console)
+                    """,
+                    status: 'Success',
+                    color: '#B99976'
+            } else {
+                office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
+                    message: """❌ **Failed Build Report**
+                        **Job:** ${env.JOB_NAME}
+                        **Build #:** ${env.BUILD_NUMBER}
+                        **Logs:** [View Console Output](${env.BUILD_URL}console)
+                    """,
+                    status: 'Failure',
+                    color: '#B99976'
             }
         }
     }
+}
 }
