@@ -7,8 +7,9 @@ pipeline {
 
     environment {
         TEAMS_WEBHOOK = 'https://mmmutgkp.webhook.office.com/webhookb2/acd9b1e9-7637-4f8a-9611-9546f4a0cae9@d0732ed6-a89f-488d-b29d-e5e9e7cdde5c/JenkinsCI/41f7c0d803d14461af0c74fe5834c1e6/54066a31-27ea-43fc-8f80-fa31f39edb6c/V2-EDRWdM70sVIS33GCWvQvZzNAFY9akRCo6Y6PoedFYQ1'
-        NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085/repository/vlink-image/'
-        DOCKER_IMAGE_NAME = 'vlink-image/vlink'
+        NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085'
+        DOCKER_REPO = 'vlink-image'
+        DOCKER_IMAGE_NAME = 'vlink'
     }
 
     stages {
@@ -90,28 +91,28 @@ pipeline {
             }
         }
 
-       // Build Docker Image
-stage('Build Docker Image') {
-    steps {
-        script {
-            echo 'Building Docker image...'
-            dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}")
-        }
-    }
-}
-
-// Push Docker Image to Nexus Docker Repo
-stage('Push Docker Image to Nexus Docker Repo') {
-    steps {
-        script {
-            echo 'Pushing Docker image to Nexus...'
-            docker.withRegistry("http://${NEXUS_DOCKER_REGISTRY}", 'nexuslogin') {
-                dockerImage.push()
-                dockerImage.push("latest") // optional
+        // Build Docker Image
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    dockerImage = docker.build("${NEXUS_DOCKER_REGISTRY}/${DOCKER_REPO}/${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}")
+                }
             }
         }
-    }
-}
+
+        // Push Docker Image to Nexus Docker Repo
+        stage('Push Docker Image to Nexus Docker Repo') {
+            steps {
+                script {
+                    echo 'Pushing Docker image to Nexus...'
+                    docker.withRegistry("http://${NEXUS_DOCKER_REGISTRY}", 'nexuslogin') {
+                        dockerImage.push()
+                        dockerImage.push("latest")
+                    }
+                }
+            }
+        }
         stage('Deploy') {
             steps {
                 echo 'Deploying...'
