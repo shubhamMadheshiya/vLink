@@ -1,0 +1,6 @@
+---
+- name: Deploy Docker image from Nexus to SIT servers
+  hosts: sit
+  become: yes
+  roles:
+    - deploy_docker

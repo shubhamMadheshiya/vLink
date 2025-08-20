@@ -1,0 +1,34 @@
+---
+- name: Ensure Docker is installed
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker Compose is installed
+  apt:
+    name: docker-compose
+    state: present
+    update_cache: yes
+
+- name: Log in to Nexus Docker registry
+  community.docker.docker_login:
+    registry_url: "http://{{ nexus_registry }}"
+    username: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+
+- name: Create app directory
+  file:
+    path: /opt/vlink
+    state: directory
+
+- name: Deploy docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/vlink/docker-compose.yml
+
+- name: Pull and run Docker container
+  community.docker.docker_compose:
+    project_src: /opt/vlink
+    pull: yes
+    restarted: yes
