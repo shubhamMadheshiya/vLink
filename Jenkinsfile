@@ -10,6 +10,8 @@ pipeline {
         NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085'
         DOCKER_REPO = 'vlink-image'
         DOCKER_IMAGE_NAME = 'vlink'
+        NEXUS_USERNAME = credentials('nexuslogin') // Jenkins credentials binding
+        NEXUS_PASSWORD = credentials('nexuslogin')
     }
 
     stages {
@@ -113,11 +115,23 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
-            steps {
-                echo 'Deploying...'
-            }
-        }
+        stage('Ansible Deploy') {
+    steps {
+        echo 'Deploying with Ansible...'
+        sh """
+            cd ansible
+            ansible-playbook playbooks/deploy.yml \
+                -i inventories/sit/hosts \
+                -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
+                -e docker_repo=${DOCKER_REPO} \
+                -e docker_image_name=${DOCKER_IMAGE_NAME} \
+                -e docker_image_tag=${BUILD_NUMBER} \
+                -e nexus_username=\$NEXUS_USERNAME \
+                -e nexus_password=\$NEXUS_PASSWORD \
+                --user=vagrant --private-key=~/.ssh/id_rsa
+        """
+    }
+}
     }
 
     post {
