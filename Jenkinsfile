@@ -127,7 +127,8 @@ pipeline {
                 -e docker_image_name=${DOCKER_IMAGE_NAME} \
                 -e docker_image_tag=${BUILD_NUMBER} \
                 -e nexus_username=\$NEXUS_USERNAME \
-                -e nexus_password=\$NEXUS_PASSWORD 
+                -e nexus_password=\$NEXUS_PASSWORD \
+                --private-key=/var/lib/jenkins/.ssh/id_rsa --user=vagrant
         """
     }
 }
