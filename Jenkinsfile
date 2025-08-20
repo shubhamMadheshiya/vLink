@@ -11,7 +11,7 @@ pipeline {
         DOCKER_REPO = 'vlink-image'
         DOCKER_IMAGE_NAME = 'vlink'
         NEXUS_USERNAME = 'admin' // Jenkins credentials binding
-        NEXUS_PASSWORD = credentials('nexuslogin')
+        NEXUS_PASSWORD = 'Shubham@1999'
     }
 
     stages {
