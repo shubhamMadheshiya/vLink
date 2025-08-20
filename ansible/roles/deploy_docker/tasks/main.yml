@@ -14,8 +14,8 @@
 - name: Log in to Nexus Docker registry
   community.docker.docker_login:
     registry_url: "http://{{ nexus_registry }}"
-    username: "{{ nexus_username }}"
-    password: "{{ nexus_password }}"
+    username: "admin"
+    password: "Shubham@1999"
 
 - name: Create app directory
   file:
