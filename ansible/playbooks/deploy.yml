@@ -3,4 +3,4 @@
   hosts: sit
   become: yes
   roles:
-    - deploy_docker
+    - ../roles/deploy_docker
