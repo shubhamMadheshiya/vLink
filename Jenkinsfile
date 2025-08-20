@@ -119,10 +119,10 @@ pipeline {
     steps {
         sh '''
             echo "Testing SSH to SIT1..."
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.13 "hostname && whoami"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no jenkins@192.168.56.13 "hostname && whoami"
 
             echo "Testing SSH to SIT2..."
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.14 "hostname && whoami"
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no jenkins@192.168.56.14 "hostname && whoami"
         '''
     }
 }
