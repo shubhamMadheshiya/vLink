@@ -120,6 +120,7 @@ pipeline {
         echo 'Deploying with Ansible...'
         sh """
             cd ansible
+            whoami
             ansible-playbook playbooks/deploy.yml \
                 -i inventories/sit/hosts \
                 -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
