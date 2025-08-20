@@ -115,12 +115,26 @@ pipeline {
                 }
             }
         }
-        stage('Ansible Deploy') {
+        stage('Test SSH to SIT') {
     steps {
+        sh '''
+            echo "Testing SSH to SIT1..."
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.13 "hostname && whoami"
+
+            echo "Testing SSH to SIT2..."
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.14 "hostname && whoami"
+        '''
+    }
+}
+
+        stage('Ansible Deploy') {
+        steps {
         echo 'Deploying with Ansible...'
         sh """
             cd ansible
             whoami
+            cat ~/.ssh/id_rsa.pub
+            cat ~/.ssh/id_rsa
             ansible-playbook playbooks/deploy.yml \
                 -i inventories/sit/hosts \
                 -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
