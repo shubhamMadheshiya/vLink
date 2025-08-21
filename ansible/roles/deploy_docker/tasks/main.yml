@@ -1,5 +1,5 @@
 ---
-# Remove old conflicting packages first
+# Remove old/legacy Docker packages
 - name: Remove old Docker and containerd versions
   apt:
     name:
@@ -12,8 +12,8 @@
     purge: yes
     update_cache: yes
 
-# Install dependencies
-- name: Install required packages
+# Install prerequisites
+- name: Install prerequisites for Docker repo
   apt:
     name:
       - apt-transport-https
@@ -26,17 +26,23 @@
 
 # Add Docker GPG key
 - name: Add Docker GPG key
-  ansible.builtin.apt_key:
+  get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
+    dest: /etc/apt/keyrings/docker.gpg
+    mode: '0644'
+  register: docker_gpg
+  until: docker_gpg is succeeded
+  retries: 3
+  delay: 5
 
-# Add Docker repository
+# Add Docker apt repository (with signed-by)
 - name: Add Docker apt repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
+    filename: docker
 
-# Install Docker CE + Compose plugin
+# Install Docker CE + plugins
 - name: Install Docker CE
   apt:
     name:
@@ -47,6 +53,13 @@
       - docker-compose-plugin
     state: present
     update_cache: yes
+
+# Ensure Docker service is running
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: true
 
 # Configure insecure registry
 - name: Configure Docker to allow insecure registry
@@ -71,19 +84,19 @@
     path: /opt/vlink
     state: directory
 
-# Deploy docker-compose file
+# Deploy docker-compose.yml
 - name: Deploy docker-compose file
   template:
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
 
-# Pull and run
+# Pull + run with docker-compose
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
     pull: yes
     restarted: yes
-# Restart Docker service
+
 - name: Restart docker
   service:
     name: docker
