@@ -11,6 +11,15 @@
     state: present
     update_cache: yes
 
+- name: Configure Docker to allow insecure registry
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "insecure-registries": ["{{ nexus_registry }}"]
+      }
+  notify: Restart docker
+  
 - name: Log in to Nexus Docker registry
   community.docker.docker_login:
     registry_url: "http://{{ nexus_registry }}"
