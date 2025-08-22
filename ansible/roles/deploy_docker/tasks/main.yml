@@ -1,110 +1,32 @@
 ---
-# Install prerequisites for Docker repo
-- name: Install prerequisites
-  ansible.builtin.apt:
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
+- name: Ensure Docker is installed
+  apt:
+    name: docker.io
     state: present
     update_cache: yes
 
-# Ensure keyrings directory
-- name: Ensure /etc/apt/keyrings exists
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
-
-# Add Docker GPG key
-- name: Add Docker GPG key
-  ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    dest: /etc/apt/keyrings/docker.gpg
-    mode: '0644'
-    force: yes
-
-# Add Docker apt repository
-- name: Add Docker apt repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+- name: Ensure Docker Compose is installed
+  apt:
+    name: docker-compose
     state: present
     update_cache: yes
 
-# Remove old/legacy Docker packages (now that the repository and key are configured)
-- name: Remove old Docker and containerd versions
-  ansible.builtin.apt:
-    name:
-      - docker
-      - docker-engine
-      - docker.io
-      - containerd
-      - runc
-    state: absent
-    purge: yes
-
-# Install Docker CE + plugins (will automatically update cache if needed, after repository is configured)
-- name: Install Docker CE and plugins
-  ansible.builtin.apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-    state: present
-
-# Ensure Docker service is running
-- name: Ensure Docker service is running
-  ansible.builtin.service:
-    name: docker
-    state: started
-    enabled: true
-
-# Configure insecure registry
-- name: Configure Docker to allow insecure registry
-  ansible.builtin.copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "insecure-registries": ["{{ nexus_registry }}"]
-      }
-  notify: Restart docker
-
-# Ensure pip3 is installed (needed for Python modules)
-- name: Ensure pip3 is installed
-  ansible.builtin.apt:
-    name: python3-pip
-    state: present
-
-# Install Docker SDK for Python (needed for community.docker)
-- name: Install Docker SDK for Python
-  ansible.builtin.pip:
-    name: docker
-    state: present
-
-# Log in to Nexus
 - name: Log in to Nexus Docker registry
   community.docker.docker_login:
     registry_url: "http://{{ nexus_registry }}"
     username: "{{ nexus_username }}"
     password: "{{ nexus_password }}"
 
-# Create app directory
 - name: Create app directory
-  ansible.builtin.file:
+  file:
     path: /opt/vlink
     state: directory
 
-# Deploy docker-compose.yml
 - name: Deploy docker-compose file
-  ansible.builtin.template:
+  template:
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
 
-# Pull and run Docker containers
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
