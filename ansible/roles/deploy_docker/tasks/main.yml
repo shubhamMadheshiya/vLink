@@ -12,8 +12,8 @@
     purge: yes
     update_cache: yes
 
-# Install prerequisites
-- name: Install prerequisites for Docker repo
+# Install prerequisites for Docker repo
+- name: Install prerequisites
   apt:
     name:
       - apt-transport-https
@@ -25,13 +25,13 @@
     update_cache: yes
 
 # Ensure keyrings directory
-- name: Ensure keyrings directory exists
+- name: Ensure /etc/apt/keyrings exists
   file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
 
-# Add Docker GPG key (binary format)
+# Add Docker GPG key in dearmored format
 - name: Add Docker GPG key
   shell: |
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -43,15 +43,21 @@
     path: /etc/apt/keyrings/docker.gpg
     mode: '0644'
 
-# Add Docker apt repository
+# Add Docker apt repository manually
 - name: Add Docker apt repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-    filename: docker
+  copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    content: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    mode: '0644'
+
+# Update apt cache
+- name: Update apt cache
+  apt:
+    update_cache: yes
 
 # Install Docker CE + plugins
-- name: Install Docker CE
+- name: Install Docker CE and plugins
   apt:
     name:
       - docker-ce
@@ -60,7 +66,6 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: yes
 
 # Ensure Docker service is running
 - name: Ensure Docker service is running
@@ -79,20 +84,17 @@
       }
   notify: Restart docker
 
-# Ensure pip3 is installed (for docker SDK)
+# Ensure pip3 is installed (needed for Python modules)
 - name: Ensure pip3 is installed
   apt:
     name: python3-pip
     state: present
 
-# Install Python Docker SDK
+# Install Docker SDK for Python (needed for community.docker)
 - name: Install Docker SDK for Python
-  pip:
+  ansible.builtin.pip:
     name: docker
     state: present
-
-# Flush handlers to restart Docker before login
-- meta: flush_handlers
 
 # Log in to Nexus
 - name: Log in to Nexus Docker registry
@@ -113,7 +115,7 @@
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
 
-# Pull and run with docker-compose
+# Pull and run Docker containers
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
