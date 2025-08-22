@@ -30,12 +30,8 @@
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.gpg
     mode: '0644'
-  register: docker_gpg
-  until: docker_gpg is succeeded
-  retries: 3
-  delay: 5
 
-# Add Docker apt repository (with signed-by)
+# Add Docker apt repository
 - name: Add Docker apt repository
   ansible.builtin.apt_repository:
     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
@@ -71,18 +67,20 @@
       }
   notify: Restart docker
 
-# Ensure pip3 is installed (needed for Ansible pip module)
+# Ensure pip3 is installed (for docker SDK)
 - name: Ensure pip3 is installed
   apt:
     name: python3-pip
     state: present
-    update_cache: yes
 
-# Install Python Docker SDK (required for community.docker modules)
+# Install Python Docker SDK
 - name: Install Docker SDK for Python
-  ansible.builtin.pip:
+  pip:
     name: docker
     state: present
+
+# Flush handlers to restart Docker before login
+- meta: flush_handlers
 
 # Log in to Nexus
 - name: Log in to Nexus Docker registry
@@ -103,7 +101,7 @@
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
 
-# Pull + run with docker-compose
+# Pull and run with docker-compose
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
