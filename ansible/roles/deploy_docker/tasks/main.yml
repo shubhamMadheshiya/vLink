@@ -97,7 +97,3 @@
     pull: yes
     restarted: yes
 
-- name: Restart docker
-  service:
-    name: docker
-    state: restarted

@@ -1,0 +1,6 @@
+nexus_registry: "192.168.56.11:8085"
+docker_repo: "vlink-image"
+docker_image_name: "vlink"
+docker_image_tag: "latest"
+nexus_username: "admin"
+nexus_password: "Shubham@1999"
