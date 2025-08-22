@@ -1,20 +1,7 @@
 ---
-# Remove old/legacy Docker packages
-- name: Remove old Docker and containerd versions
-  apt:
-    name:
-      - docker
-      - docker-engine
-      - docker.io
-      - containerd
-      - runc
-    state: absent
-    purge: yes
-    update_cache: yes
-
 # Install prerequisites for Docker repo
 - name: Install prerequisites
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -26,7 +13,7 @@
 
 # Ensure keyrings directory
 - name: Ensure /etc/apt/keyrings exists
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
@@ -46,9 +33,21 @@
     state: present
     update_cache: yes
 
-# Install Docker CE + plugins
+# Remove old/legacy Docker packages (now that the repository and key are configured)
+- name: Remove old Docker and containerd versions
+  ansible.builtin.apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+    purge: yes
+
+# Install Docker CE + plugins (will automatically update cache if needed, after repository is configured)
 - name: Install Docker CE and plugins
-  apt:
+  ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
@@ -59,14 +58,14 @@
 
 # Ensure Docker service is running
 - name: Ensure Docker service is running
-  service:
+  ansible.builtin.service:
     name: docker
     state: started
     enabled: true
 
 # Configure insecure registry
 - name: Configure Docker to allow insecure registry
-  copy:
+  ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     content: |
       {
@@ -76,7 +75,7 @@
 
 # Ensure pip3 is installed (needed for Python modules)
 - name: Ensure pip3 is installed
-  apt:
+  ansible.builtin.apt:
     name: python3-pip
     state: present
 
@@ -95,13 +94,13 @@
 
 # Create app directory
 - name: Create app directory
-  file:
+  ansible.builtin.file:
     path: /opt/vlink
     state: directory
 
 # Deploy docker-compose.yml
 - name: Deploy docker-compose file
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
 
