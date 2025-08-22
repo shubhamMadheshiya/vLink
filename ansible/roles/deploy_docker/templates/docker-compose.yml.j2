@@ -2,6 +2,7 @@ version: "3"
 services:
   vlink:
     image: "{{ nexus_registry }}/{{ docker_repo }}/{{ docker_image_name }}:{{ docker_image_tag }}"
+    container_name: vlink-app
     restart: always
     ports:
       - "8080:8080"
