@@ -13,6 +13,24 @@ pipeline {
         // NEXUS_USERNAME = 'admin' // Jenkins credentials binding
         // NEXUS_PASSWORD = 'Shubham@1999'
     }
+    options {
+        // Configure Office365 webhook notifications
+        office365ConnectorWebhooks([
+            [
+                name: 'fintech-webhook',
+                url: TEAMS_WEBHOOK,
+                startNotification: false,
+                notifySuccess: true,
+                notifyAborted: true,
+                notifyNotBuilt: true,
+                notifyUnstable: true,
+                notifyFailure: true,
+                notifyBackToNormal: true,
+                notifyRepeatedFailure: false,
+                timeout: 30000
+            ]
+        ])
+    }
 
     stages {
         stage('Fetch code') {
@@ -151,8 +169,9 @@ pipeline {
     }
 
     post {
-        always {
+       always {
             script {
+                // Prepare useful links
                 def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
                 def groupIdPath = "QA"
                 def artifactId = "vLink"
@@ -161,27 +180,32 @@ pipeline {
                 def artifactFileName = "${artifactId}-${version}.${type}"
                 def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
                 def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
+                def consoleLogLink = "${env.BUILD_URL}console"
 
-                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
-                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
-                        message: """✅ **Success Build report**  
-                            **Job:** ${env.JOB_NAME}  
-                            **Build #:** ${env.BUILD_NUMBER}  
-                            **Artifact:** [${artifactFileName}](${nexusArtifactLink})  
-                            **Docker Image:** [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
-                            **Logs:** [View Console Output](${env.BUILD_URL}console)
+                // Choose status and color
+                def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
+                def buildColor = (buildStatus == 'Success') ? '#00FF00' :
+                                 (buildStatus == 'FAILURE') ? '#FF0000' :
+                                 (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
+
+                // Send notification to Teams
+                withCredentials([string(credentialsId: 'teams-webhook', variable: 'TEAMS_WEBHOOK')]) {
+                    office365ConnectorSend(
+                        webhookUrl: "${TEAMS_WEBHOOK}",
+                        message: """**Jenkins Build Notification**  
+                      ➡️ *Job:* ${env.JOB_NAME}  
+                      ➡️ *Build #:* ${env.BUILD_NUMBER}  
+                      ➡️ *Status:* ${buildStatus}  
                         """,
-                        status: 'Success',
-                        color: '#B99976'
-                } else {
-                    office365ConnectorSend webhookUrl: TEAMS_WEBHOOK,
-                        message: """❌ **Failed Build Report**  
-                            **Job:** ${env.JOB_NAME}  
-                            **Build #:** ${env.BUILD_NUMBER}  
-                            **Logs:** [View Console Output](${env.BUILD_URL}console)
-                        """,
-                        status: 'Failure',
-                        color: '#B99976'
+                        status: buildStatus,
+                        color: buildColor,
+                        factDefinitions: [
+                            [name: "Branch", value: env.BRANCH_NAME ?: "main"],
+                            [name: "Artifact", value: "[${artifactFileName}](${nexusArtifactLink})"],
+                            [name: "Docker Image", value: "[${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})"],
+                            [name: "Console Logs", value: "[View Logs](${consoleLogLink})"]
+                        ]
+                    )
                 }
             }
         }
