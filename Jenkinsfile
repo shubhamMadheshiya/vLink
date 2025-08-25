@@ -170,7 +170,7 @@ pipeline {
                         """,
                         status: buildStatus,
                         color: buildColor,
-                        factDefinitions: [
+                        facts: [
                             [name: "Artifact", value: "[${artifactFileName}](${nexusArtifactLink})"],
                             [name: "Docker Image", value: "[${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})"],
                             [name: "Console Logs", value: "[View Logs](${consoleLogLink})"]
