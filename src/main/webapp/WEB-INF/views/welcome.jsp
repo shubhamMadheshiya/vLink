@@ -35,7 +35,7 @@
                             <a class="navbar-brand" href="#" style="margin-right: -8px; margin-top: -5px;">
                                 <img alt="Brand" src="${contextPath}/resources/Images/user/logo.png" width="30px" height="30px">
                             </a>
-                            <a class="navbar-brand" href="#">HKH Infotech</a>
+                            <a class="navbar-brand" href="#">vLink</a>
                         </div>
                         <!-- Navbar Links -->
                         <div class="navbar-collapse collapse">
@@ -125,7 +125,7 @@
                         <div class="media-body">
                             <hr>
                             <h3><strong>Bio</strong></h3>
-                            <p>DevOps For Product Management and Strategy of Application Delivery at HKH Infotech. Responsible of providing customers with counsel on their DevOps strategies to help them deliver higher quality software and services to market faster.</p>
+                            <p>DevOps For Product Management and Strategy of Application Delivery at vLink. Responsible of providing customers with counsel on their DevOps strategies to help them deliver higher quality software and services to market faster.</p>
                             <hr>
                             <h3><strong>Location</strong></h3>
                             <p>Earth</p>

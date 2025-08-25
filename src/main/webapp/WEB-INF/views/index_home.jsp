@@ -20,7 +20,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="${contextPath}/index">HKH Infotech</a>
+                <a class="navbar-brand" href="${contextPath}/index">vLink</a>
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
@@ -105,20 +105,20 @@
     <h3 class="w3-border-bottom w3-border-light-grey w3-padding-16" align="center">ABOUT</h3>
     <div class="w3-content" style="max-width:864px">
 	     <p style="text-align:justify;">
-                    HKH Infotech is a dynamic software company dedicated to delivering innovative technology solutions. Founded with a mission to leverage cutting-edge technology and unparalleled expertise, we specialize in creating high-quality software solutions that drive business success.
+                    vLink is a dynamic software company dedicated to delivering innovative technology solutions. Founded with a mission to leverage cutting-edge technology and unparalleled expertise, we specialize in creating high-quality software solutions that drive business success.
                 </p>
                 <p style="text-align:justify;">
                     Our team is led by seasoned DevOps experts with many years of industry experience. They bring a wealth of knowledge in automating and optimizing the software development lifecycle, ensuring that our projects are efficient, reliable, and scalable.
                 </p>
                 <p style="text-align:justify;">
-                    At HKH Infotech, we focus on understanding our clients' unique needs and providing tailored solutions that meet their objectives. Whether it's custom software development, system integration, or ongoing support, we are committed to excellence and client satisfaction.
+                    At vLink, we focus on understanding our clients' unique needs and providing tailored solutions that meet their objectives. Whether it's custom software development, system integration, or ongoing support, we are committed to excellence and client satisfaction.
                 </p>
                 <p style="text-align:justify;">
-                    With a commitment to staying ahead of technological trends and a passion for innovation, HKH Infotech is your trusted partner in navigating the digital landscape and achieving your business goals.
+                    With a commitment to staying ahead of technological trends and a passion for innovation, vLink is your trusted partner in navigating the digital landscape and achieving your business goals.
                 </p>
                 <p><strong>Address:</strong> Punjagutta Colony Ameerpet, Hyderabad</p>
-                <p><strong>Phone:</strong> +91-8001234567</p>
-                <p><strong>Email:</strong> contact@hkhinfotech.com</p>
+                <p><strong>Phone:</strong> +91-9670653925</p>
+                <p><strong>Email:</strong> kr.shubhamgupta1999.com</p>
   	</div>
    </div>
 
