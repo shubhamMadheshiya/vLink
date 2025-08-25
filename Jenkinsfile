@@ -10,26 +10,23 @@ pipeline {
         NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085'
         DOCKER_REPO = 'vlink-image'
         DOCKER_IMAGE_NAME = 'vlink'
-        // NEXUS_USERNAME = 'admin' // Jenkins credentials binding
-        // NEXUS_PASSWORD = 'Shubham@1999'
     }
+
     options {
-        // Configure Office365 webhook notifications
-        office365ConnectorWebhooks([
-            [
-                name: 'fintech-webhook',
-                url: TEAMS_WEBHOOK,
-                startNotification: false,
-                notifySuccess: true,
-                notifyAborted: true,
-                notifyNotBuilt: true,
-                notifyUnstable: true,
-                notifyFailure: true,
-                notifyBackToNormal: true,
-                notifyRepeatedFailure: false,
-                timeout: 30000
-            ]
-        ])
+        // Teams webhook notifications
+        office365ConnectorWebhooks([[
+            name: 'fintech-webhook',
+            url: TEAMS_WEBHOOK,
+            startNotification: false,
+            notifySuccess: true,
+            notifyAborted: true,
+            notifyNotBuilt: true,
+            notifyUnstable: true,
+            notifyFailure: true,
+            notifyBackToNormal: true,
+            notifyRepeatedFailure: false,
+            timeout: 30000
+        ]])
     }
 
     stages {
@@ -100,19 +97,16 @@ pipeline {
                     version: "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}",
                     repository: 'vLink-repo',
                     credentialsId: 'nexuslogin',
-                    artifacts: [
-                        [
-                            artifactId: 'vLink',
-                            classifier: '',
-                            file: 'target/vprofile-v2.war',
-                            type: 'war'
-                        ]
-                    ]
+                    artifacts: [[
+                        artifactId: 'vLink',
+                        classifier: '',
+                        file: 'target/vprofile-v2.war',
+                        type: 'war'
+                    ]]
                 )
             }
         }
 
-        // Build Docker Image
         stage('Build Docker Image') {
             steps {
                 script {
@@ -122,7 +116,6 @@ pipeline {
             }
         }
 
-        // Push Docker Image to Nexus Docker Repo
         stage('Push Docker Image to Nexus Docker Repo') {
             steps {
                 script {
@@ -134,84 +127,71 @@ pipeline {
                 }
             }
         }
-//         stage('Test SSH to SIT') {
-//     steps {
-//         sh '''
-//             echo "Testing SSH to SIT1..."
-//             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.13 "hostname && whoami"
 
-//             echo "Testing SSH to SIT2..."
-//             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.14 "hostname && whoami"
-//         '''
-//     }
-// }
-
-    stage('Ansible Deploy') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'nexuslogin', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-            echo 'Deploying with Ansible...'
-            sh """
-                cd ansible
-                whoami
-                ansible-playbook playbooks/deploy.yml \
-                    -i inventories/sit/hosts \
-                    -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
-                    -e docker_repo=${DOCKER_REPO} \
-                    -e docker_image_name=${DOCKER_IMAGE_NAME} \
-                    -e docker_image_tag=${BUILD_NUMBER} \
-                    -e nexus_username=${NEXUS_USER} \
-                    -e nexus_password=${NEXUS_PASS}
-            """
+        stage('Ansible Deploy') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexuslogin', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    echo 'Deploying with Ansible...'
+                    sh """
+                        cd ansible
+                        whoami
+                        ansible-playbook playbooks/deploy.yml \
+                            -i inventories/sit/hosts \
+                            -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
+                            -e docker_repo=${DOCKER_REPO} \
+                            -e docker_image_name=${DOCKER_IMAGE_NAME} \
+                            -e docker_image_tag=${BUILD_NUMBER} \
+                            -e nexus_username=${NEXUS_USER} \
+                            -e nexus_password=${NEXUS_PASS}
+                    """
+                }
+            }
         }
-    }
-}
-
     }
 
     post {
-    always {
-        script {
-            // Get commit details
-            def commitMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
-            def commitAuthor = sh(script: "git log -1 --pretty=%an", returnStdout: true).trim()
-            def commitId = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-            def branchName = env.BRANCH_NAME ?: "main"
+        always {
+            script {
+                // Get commit details
+                def commitMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
+                def commitAuthor = sh(script: "git log -1 --pretty=%an", returnStdout: true).trim()
+                def commitId = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                def branchName = env.BRANCH_NAME ?: "main"
 
-            // Links
-            def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
-            def groupIdPath = "QA"
-            def artifactId = "vLink"
-            def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
-            def type = "war"
-            def artifactFileName = "${artifactId}-${version}.${type}"
-            def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
-            def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
-            def consoleLogLink = "${env.BUILD_URL}console"
+                // Links
+                def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
+                def groupIdPath = "QA"
+                def artifactId = "vLink"
+                def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
+                def type = "war"
+                def artifactFileName = "${artifactId}-${version}.${type}"
+                def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
+                def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
+                def consoleLogLink = "${env.BUILD_URL}console"
 
-            // Build status
-            def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
-            def buildColor = (buildStatus == 'Success') ? '#00FF00' :
-                             (buildStatus == 'FAILURE') ? '#FF0000' :
-                             (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
+                // Build status & color
+                def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
+                def buildColor = (buildStatus == 'Success') ? '#00FF00' :
+                                 (buildStatus == 'FAILURE') ? '#FF0000' :
+                                 (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
 
-            // Teams notification
-            office365ConnectorSend(
-                webhookUrl: TEAMS_WEBHOOK,
-                message: """**Jenkins Build Notification**  
-                ➡️ *Job:* ${env.JOB_NAME}  
-                ➡️ *Build #:* ${env.BUILD_NUMBER}  
-                ➡️ *Branch:* ${branchName}  
-                ➡️ *Commit:* [${commitId}](${consoleLogLink}) by *${commitAuthor}*  
-                ➡️ *Message:* ${commitMsg}  
-                ➡️ *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
-                ➡️ *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
-                ➡️ *Logs:* [View Console Output](${consoleLogLink})  
-                """,
-                status: buildStatus,
-                color: buildColor
-            )
+                // Teams notification
+                office365ConnectorSend(
+                    webhookUrl: TEAMS_WEBHOOK,
+                    message: """**Jenkins Build Notification**  
+                    ➡️ *Job:* ${env.JOB_NAME}  
+                    ➡️ *Build #:* ${env.BUILD_NUMBER}  
+                    ➡️ *Branch:* ${branchName}  
+                    ➡️ *Commit:* [${commitId}](${consoleLogLink}) by *${commitAuthor}*  
+                    ➡️ *Message:* ${commitMsg}  
+                    ➡️ *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
+                    ➡️ *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
+                    ➡️ *Logs:* [View Console Output](${consoleLogLink})  
+                    """,
+                    status: buildStatus,
+                    color: buildColor
+                )
+            }
         }
     }
-}
-
 }
