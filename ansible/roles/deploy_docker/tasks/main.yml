@@ -40,12 +40,12 @@
   community.docker.docker_compose:
     project_src: /opt/vlink
     state: absent
-    rmi: all # This is the key: it removes all images associated with this project
+    remove_images: all # Corrected parameter: 'remove_images' instead of 'rmi'
   ignore_errors: yes
   # This task performs a comprehensive cleanup:
   # - 'state: absent' stops and removes all containers, networks, and volumes
   #   defined in the docker-compose.yml at /opt/vlink.
-  # - 'rmi: all' goes a step further by deleting ALL Docker images that were
+  # - 'remove_images: all' goes a step further by deleting ALL Docker images that were
   #   previously used by this Docker Compose project. This prevents conflicts
   #   from old or corrupted cached images, ensuring a clean slate for the new deployment.
   # - 'ignore_errors: yes' allows the playbook to proceed even if no previous
