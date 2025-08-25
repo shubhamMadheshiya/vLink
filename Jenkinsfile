@@ -6,27 +6,28 @@ pipeline {
     }
 
     environment {
-        TEAMS_WEBHOOK = 'https://mmmutgkp.webhook.office.com/webhookb2/acd9b1e9-7637-4f8a-9611-9546f4a0cae9@d0732ed6-a89f-488d-b29d-e5e9e7cdde5c/JenkinsCI/41f7c0d803d14461af0c74fe5834c1e6/54066a31-27ea-43fc-8f80-fa31f39edb6c/V2-EDRWdM70sVIS33GCWvQvZzNAFY9akRCo6Y6PoedFYQ1'
         NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085'
         DOCKER_REPO = 'vlink-image'
         DOCKER_IMAGE_NAME = 'vlink'
     }
 
     options {
-        // Teams webhook notifications
-        office365ConnectorWebhooks([[
-            name: 'fintech-webhook',
-            url: TEAMS_WEBHOOK,
-            startNotification: false,
-            notifySuccess: true,
-            notifyAborted: true,
-            notifyNotBuilt: true,
-            notifyUnstable: true,
-            notifyFailure: true,
-            notifyBackToNormal: true,
-            notifyRepeatedFailure: false,
-            timeout: 30000
-        ]])
+        // Office365 Webhook notifications (basic automatic notifications)
+        office365ConnectorWebhooks([
+            [
+                name: 'vlink-teams',
+                url: credentials('fintech-webhook'),  // webhook stored as Jenkins credential
+                startNotification: false,
+                notifySuccess: true,
+                notifyAborted: true,
+                notifyNotBuilt: true,
+                notifyUnstable: true,
+                notifyFailure: true,
+                notifyBackToNormal: true,
+                notifyRepeatedFailure: false,
+                timeout: 30000
+            ]
+        ])
     }
 
     stages {
@@ -48,7 +49,7 @@ pipeline {
             steps {
                 echo 'Testing...'
                 sh 'mvn test'
-                // junit 'target/surefire-reports/*.xml'
+                junit 'target/surefire-reports/*.xml'
             }
         }
 
@@ -97,12 +98,14 @@ pipeline {
                     version: "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}",
                     repository: 'vLink-repo',
                     credentialsId: 'nexuslogin',
-                    artifacts: [[
-                        artifactId: 'vLink',
-                        classifier: '',
-                        file: 'target/vprofile-v2.war',
-                        type: 'war'
-                    ]]
+                    artifacts: [
+                        [
+                            artifactId: 'vLink',
+                            classifier: '',
+                            file: 'target/vprofile-v2.war',
+                            type: 'war'
+                        ]
+                    ]
                 )
             }
         }
@@ -152,13 +155,13 @@ pipeline {
     post {
         always {
             script {
-                // Get commit details
-                def commitMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
-                def commitAuthor = sh(script: "git log -1 --pretty=%an", returnStdout: true).trim()
-                def commitId = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                // Collect git commit info
+                def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
+                def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
+                def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
 
-                // Links
+                // Prepare useful links
                 def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
                 def groupIdPath = "QA"
                 def artifactId = "vLink"
@@ -169,28 +172,30 @@ pipeline {
                 def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
                 def consoleLogLink = "${env.BUILD_URL}console"
 
-                // Build status & color
                 def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
-                def buildColor = (buildStatus == 'Success') ? '#00FF00' :
-                                 (buildStatus == 'FAILURE') ? '#FF0000' :
-                                 (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
 
-                // Teams notification
-                office365ConnectorSend(
-                    webhookUrl: TEAMS_WEBHOOK,
-                    message: """**Jenkins Build Notification**  
-                    ➡️ *Job:* ${env.JOB_NAME}  
-                    ➡️ *Build #:* ${env.BUILD_NUMBER}  
-                    ➡️ *Branch:* ${branchName}  
-                    ➡️ *Commit:* [${commitId}](${consoleLogLink}) by *${commitAuthor}*  
-                    ➡️ *Message:* ${commitMsg}  
-                    ➡️ *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
-                    ➡️ *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
-                    ➡️ *Logs:* [View Console Output](${consoleLogLink})  
-                    """,
-                    status: buildStatus,
-                    color: buildColor
-                )
+                // Send rich notification to Teams
+                withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
+                    office365ConnectorSend(
+                        webhookUrl: TEAMS_HOOK,
+                        message: """**Jenkins Build Notification**  
+                        ➡️ *Job:* ${env.JOB_NAME}  
+                        ➡️ *Build #:* ${env.BUILD_NUMBER}  
+                        ➡️ *Branch:* ${branchName}  
+                        ➡️ *Commit:* ${commitId} by *${commitAuthor}*  
+                        ➡️ *Message:* ${commitMsg}  
+                        """,
+                        status: buildStatus,
+                        color: (buildStatus == 'Success') ? '#00FF00' :
+                               (buildStatus == 'FAILURE') ? '#FF0000' :
+                               (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080',
+                        factDefinitions: [
+                            [name: "Artifact", value: "[${artifactFileName}](${nexusArtifactLink})"],
+                            [name: "Docker Image", value: "[${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})"],
+                            [name: "Console Logs", value: "[View Logs](${consoleLogLink})"]
+                        ]
+                    )
+                }
             }
         }
     }
