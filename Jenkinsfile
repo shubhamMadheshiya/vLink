@@ -128,33 +128,26 @@ pipeline {
 //     }
 // }
 
-        stage('Ansible Deploy') {
-
-        steps:
-        - withCredentials:
-            - usernamePassword:
-                credentialsId: "nexuslogin"
-                usernameVariable: "NEXUS_USER"
-                passwordVariable: "NEXUS_PASS"
-
-        steps {
-        echo 'Deploying with Ansible...'
-        sh """
-            cd ansible
-            whoami
-            cat ~/.ssh/id_rsa.pub
-            cat ~/.ssh/id_rsa
-            ansible-playbook playbooks/deploy.yml \
-                -i inventories/sit/hosts \
-                -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
-                -e docker_repo=${DOCKER_REPO} \
-                -e docker_image_name=${DOCKER_IMAGE_NAME} \
-                -e docker_image_tag=${BUILD_NUMBER} \
-                -e nexus_username=${NEXUS_USER} \
-                -e nexus_password=${NEXUS_PASS}
-        """
+    stage('Ansible Deploy') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'nexuslogin', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+            echo 'Deploying with Ansible...'
+            sh """
+                cd ansible
+                whoami
+                ansible-playbook playbooks/deploy.yml \
+                    -i inventories/sit/hosts \
+                    -e nexus_registry=${NEXUS_DOCKER_REGISTRY} \
+                    -e docker_repo=${DOCKER_REPO} \
+                    -e docker_image_name=${DOCKER_IMAGE_NAME} \
+                    -e docker_image_tag=${BUILD_NUMBER} \
+                    -e nexus_username=${NEXUS_USER} \
+                    -e nexus_password=${NEXUS_PASS}
+            """
+        }
     }
 }
+
     }
 
     post {
