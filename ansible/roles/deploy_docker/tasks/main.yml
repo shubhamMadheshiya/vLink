@@ -33,35 +33,30 @@
     state: restarted
     daemon_reload: yes
   # This crucial step ensures the Docker daemon is in a fresh, responsive state
-  # before any Docker Compose operations are attempted. This addresses the
-  # 'Read timed out' error experienced on sit1.
+  # before any Docker Compose operations are attempted. This addresses common
+  # 'Read timed out' errors and ensures daemon stability.
 
-- name: Stop and remove existing Docker Compose project
+- name: Stop and remove existing Docker Compose project and ALL associated images
   community.docker.docker_compose:
     project_src: /opt/vlink
     state: absent
+    rmi: all # This is the key: it removes all images associated with this project
   ignore_errors: yes
-  # This task cleans up any previous deployment defined by the docker-compose.yml
-  # in /opt/vlink. Using 'state: absent' ensures that old containers, networks,
-  # and volumes are removed. 'ignore_errors: yes' makes the playbook robust
-  # in cases where no previous project was running, or if the daemon was
-  # initially unresponsive but fixed by the restart above.
-
-- name: Remove Docker image to ensure a fresh pull
-  community.docker.docker_image:
-    name: "{{ nexus_registry }}/{{ docker_repo }}/{{ docker_image_name }}"
-    tag: "{{ docker_image_tag }}"
-    state: absent
-  ignore_errors: yes
-  # This task explicitly removes the Docker image that is about to be deployed.
-  # This is crucial for resolving issues related to corrupted or outdated cached images.
-  # By removing it, Docker is forced to pull the latest version from Nexus,
-  # guaranteeing a clean start.
+  # This task performs a comprehensive cleanup:
+  # - 'state: absent' stops and removes all containers, networks, and volumes
+  #   defined in the docker-compose.yml at /opt/vlink.
+  # - 'rmi: all' goes a step further by deleting ALL Docker images that were
+  #   previously used by this Docker Compose project. This prevents conflicts
+  #   from old or corrupted cached images, ensuring a clean slate for the new deployment.
+  # - 'ignore_errors: yes' allows the playbook to proceed even if no previous
+  #   project was running or if some resources couldn't be removed, making the
+  #   cleanup robust.
 
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
-    pull: yes
+    pull: yes # Always pull the latest version of the image
     restarted: yes
-  # This task will now perform a fresh pull and deployment after the service restart
-  # and thorough cleanup.
+  # After the Docker service restart and a thorough cleanup of old containers
+  # and images, this task will perform a fresh pull of the new image
+  # and start the application, minimizing the risk of deployment failures.
