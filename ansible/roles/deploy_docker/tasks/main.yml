@@ -1,12 +1,12 @@
 ---
 - name: Ensure Docker is installed
-  apt:
+  ansible.builtin.apt:
     name: docker.io
     state: present
     update_cache: yes
 
 - name: Ensure Docker Compose is installed
-  apt:
+  ansible.builtin.apt:
     name: docker-compose
     state: present
     update_cache: yes
@@ -18,17 +18,39 @@
     password: "{{ nexus_password }}"
 
 - name: Create app directory
-  file:
+  ansible.builtin.file:
     path: /opt/vlink
     state: directory
 
 - name: Deploy docker-compose file
-  template:
+  ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: /opt/vlink/docker-compose.yml
+
+- name: Stop and remove existing Docker Compose project
+  community.docker.docker_compose:
+    project_src: /opt/vlink
+    state: absent # This stops and removes containers, networks, and volumes
+  ignore_errors: yes # Ignore errors if the project or containers don't exist, as it's a cleanup step
+  # This task cleans up any previous deployment defined by the docker-compose.yml in /opt/vlink.
+  # Using 'state: absent' ensures that old containers, networks, and volumes are removed,
+  # preventing conflicts with the new deployment. 'ignore_errors: yes' makes the playbook
+  # robust in cases where no previous project was running.
+
+- name: Remove Docker image to ensure a fresh pull
+  community.docker.docker_image:
+    name: "{{ nexus_registry }}/{{ docker_repo }}/{{ docker_image_name }}"
+    tag: "{{ docker_image_tag }}"
+    state: absent # This removes the specific image from the local cache
+  ignore_errors: yes # Ignore errors if the image doesn't exist locally
+  # This task explicitly removes the Docker image that is about to be deployed.
+  # This is crucial for resolving issues related to corrupted or outdated cached images
+  # (like the 'ContainerConfig' errors you encountered). By removing it, Docker is forced
+  # to pull the latest version from Nexus, guaranteeing a clean start.
 
 - name: Pull and run Docker container
   community.docker.docker_compose:
     project_src: /opt/vlink
     pull: yes
     restarted: yes
+  # This task will now perform a fresh pull and deployment after the cleanup.
