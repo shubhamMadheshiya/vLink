@@ -10,8 +10,8 @@ pipeline {
         NEXUS_DOCKER_REGISTRY = '192.168.56.11:8085'
         DOCKER_REPO = 'vlink-image'
         DOCKER_IMAGE_NAME = 'vlink'
-        NEXUS_USERNAME = 'admin' // Jenkins credentials binding
-        NEXUS_PASSWORD = 'Shubham@1999'
+        // NEXUS_USERNAME = 'admin' // Jenkins credentials binding
+        // NEXUS_PASSWORD = 'Shubham@1999'
     }
 
     stages {
@@ -33,6 +33,7 @@ pipeline {
             steps {
                 echo 'Testing...'
                 sh 'mvn test'
+                junit 'target/surefire-reports/*.xml'
             }
         }
 
@@ -115,19 +116,27 @@ pipeline {
                 }
             }
         }
-        stage('Test SSH to SIT') {
-    steps {
-        sh '''
-            echo "Testing SSH to SIT1..."
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.13 "hostname && whoami"
+//         stage('Test SSH to SIT') {
+//     steps {
+//         sh '''
+//             echo "Testing SSH to SIT1..."
+//             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.13 "hostname && whoami"
 
-            echo "Testing SSH to SIT2..."
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.14 "hostname && whoami"
-        '''
-    }
-}
+//             echo "Testing SSH to SIT2..."
+//             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.56.14 "hostname && whoami"
+//         '''
+//     }
+// }
 
         stage('Ansible Deploy') {
+
+        steps:
+        - withCredentials:
+            - usernamePassword:
+                credentialsId: "nexuslogin"
+                usernameVariable: "NEXUS_USER"
+                passwordVariable: "NEXUS_PASS"
+
         steps {
         echo 'Deploying with Ansible...'
         sh """
@@ -141,8 +150,8 @@ pipeline {
                 -e docker_repo=${DOCKER_REPO} \
                 -e docker_image_name=${DOCKER_IMAGE_NAME} \
                 -e docker_image_tag=${BUILD_NUMBER} \
-                -e nexus_username=${NEXUS_USERNAME} \
-                -e nexus_password=${NEXUS_PASSWORD}
+                -e nexus_username=${NEXUS_USER} \
+                -e nexus_password=${NEXUS_PASS}
         """
     }
 }
