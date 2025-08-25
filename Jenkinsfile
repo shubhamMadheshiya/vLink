@@ -169,45 +169,49 @@ pipeline {
     }
 
     post {
-       always {
-            script {
-                // Prepare useful links
-                def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
-                def groupIdPath = "QA"
-                def artifactId = "vLink"
-                def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
-                def type = "war"
-                def artifactFileName = "${artifactId}-${version}.${type}"
-                def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
-                def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
-                def consoleLogLink = "${env.BUILD_URL}console"
+    always {
+        script {
+            // Get commit details
+            def commitMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
+            def commitAuthor = sh(script: "git log -1 --pretty=%an", returnStdout: true).trim()
+            def commitId = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+            def branchName = env.BRANCH_NAME ?: "main"
 
-                // Choose status and color
-                def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
-                def buildColor = (buildStatus == 'Success') ? '#00FF00' :
-                                 (buildStatus == 'FAILURE') ? '#FF0000' :
-                                 (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
+            // Links
+            def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
+            def groupIdPath = "QA"
+            def artifactId = "vLink"
+            def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
+            def type = "war"
+            def artifactFileName = "${artifactId}-${version}.${type}"
+            def nexusArtifactLink = "${nexusBaseUrl}/${groupIdPath}/${artifactId}/${version}/${artifactFileName}"
+            def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
+            def consoleLogLink = "${env.BUILD_URL}console"
 
-                // Send notification to Teams
-                withCredentials([string(credentialsId: 'teams-webhook', variable: 'TEAMS_WEBHOOK')]) {
-                    office365ConnectorSend(
-                        webhookUrl: "${TEAMS_WEBHOOK}",
-                        message: """**Jenkins Build Notification**  
-                      ➡️ *Job:* ${env.JOB_NAME}  
-                      ➡️ *Build #:* ${env.BUILD_NUMBER}  
-                      ➡️ *Status:* ${buildStatus}  
-                        """,
-                        status: buildStatus,
-                        color: buildColor,
-                        factDefinitions: [
-                            [name: "Branch", value: env.BRANCH_NAME ?: "main"],
-                            [name: "Artifact", value: "[${artifactFileName}](${nexusArtifactLink})"],
-                            [name: "Docker Image", value: "[${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})"],
-                            [name: "Console Logs", value: "[View Logs](${consoleLogLink})"]
-                        ]
-                    )
-                }
-            }
+            // Build status
+            def buildStatus = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'Success' : currentBuild.result
+            def buildColor = (buildStatus == 'Success') ? '#00FF00' :
+                             (buildStatus == 'FAILURE') ? '#FF0000' :
+                             (buildStatus == 'UNSTABLE') ? '#FFA500' : '#808080'
+
+            // Teams notification
+            office365ConnectorSend(
+                webhookUrl: TEAMS_WEBHOOK,
+                message: """**Jenkins Build Notification**  
+                ➡️ *Job:* ${env.JOB_NAME}  
+                ➡️ *Build #:* ${env.BUILD_NUMBER}  
+                ➡️ *Branch:* ${branchName}  
+                ➡️ *Commit:* [${commitId}](${consoleLogLink}) by *${commitAuthor}*  
+                ➡️ *Message:* ${commitMsg}  
+                ➡️ *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
+                ➡️ *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
+                ➡️ *Logs:* [View Console Output](${consoleLogLink})  
+                """,
+                status: buildStatus,
+                color: buildColor
+            )
         }
     }
+}
+
 }
