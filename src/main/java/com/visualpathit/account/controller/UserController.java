@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
-fgxgf 
-hff()
+
+
 
 @Controller
 public class UserController {
@@ -33,7 +33,7 @@ public class UserController {
     @Autowired
     private ProducerService producerService;
 
-    @GetMapping("/registration")
+    @GetMapping("/registrations")
     public String registration(Model model) {
         model.addAttribute("userForm", new User());
         return "registration";
