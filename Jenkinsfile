@@ -134,7 +134,7 @@ pipeline {
 
     post {
         always {
-            withCredentials([string(credentialsId: 'teams-webhook', variable: 'TEAMS_HOOK')]) {
+            withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
                 script {
                     // Collect Git info
                     def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
