@@ -33,7 +33,7 @@ public class UserController {
     @Autowired
     private ProducerService producerService;
 
-    @GetMapping("/registrations")
+    @GetMapping("/registration")
     public String registration(Model model) {
         model.addAttribute("userForm", new User());
         return "registration";
