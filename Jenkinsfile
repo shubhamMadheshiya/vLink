@@ -132,7 +132,7 @@ pipeline {
 
     post {
     success {
-        withCredentials([string(credentialsId: 'teams-webhook', variable: 'TEAMS_HOOK')]) {
+        withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
             script {
                 def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
@@ -181,7 +181,7 @@ pipeline {
     }
 
     failure {
-        withCredentials([string(credentialsId: 'teams-webhook', variable: 'TEAMS_HOOK')]) {
+        withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
             script {
                 def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
