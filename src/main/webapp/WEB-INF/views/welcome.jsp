@@ -73,7 +73,7 @@
                                                     <div class="col-md-7">
                                                         <span>${pageContext.request.userPrincipal.name}</span> <br/>
                                                         <p class="text-muted small">
-                                                            ${pageContext.request.userPrincipal.name}@hkhinfotech.co.in
+                                                            ${pageContext.request.userPrincipal.name}@shubhamgupta1999@gmail.com
                                                         </p>
                                                         <div class="divider"></div>
                                                         <a href="#" class="btn btn-default btn-xs"><i class="fa fa-user-o" aria-hidden="true"></i> Update Profile </a>
@@ -144,7 +144,7 @@
             <div class="panel panel-default">
                 <div class="panel-body">
                     <span>
-                        <h1 class="panel-title pull-left" style="font-size:30px;">${pageContext.request.userPrincipal.name} &nbsp; <small>${pageContext.request.userPrincipal.name}@hkhinfotech.co.in</small> <i class="fa fa-check text-success" aria-hidden="true" data-toggle="tooltip" data-placement="bottom" title=" sharing with you"></i></h1>
+                        <h1 class="panel-title pull-left" style="font-size:30px;">${pageContext.request.userPrincipal.name} &nbsp; <small>${pageContext.request.userPrincipal.name}@shubhamgupta1999@gmail.com</small> <i class="fa fa-check text-success" aria-hidden="true" data-toggle="tooltip" data-placement="bottom" title=" sharing with you"></i></h1>
                         <div class="dropdown pull-right">
 
                             <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
