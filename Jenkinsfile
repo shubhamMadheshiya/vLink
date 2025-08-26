@@ -203,7 +203,7 @@ pipeline {
                         [
                             '@type': 'OpenUri',
                             'name': '🔎 View Build',
-                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}" ]]
+                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}tt" ]]
                         ]
                     ]
                 )
