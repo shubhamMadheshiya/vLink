@@ -130,10 +130,10 @@ pipeline {
     }
 
 
-    post {
+post {
     success {
         withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
-           script {
+            script {
                 // Collect Git info
                 def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
@@ -153,16 +153,16 @@ pipeline {
                     webhookUrl: TEAMS_HOOK,
                     message: """✅ **Build Succeeded**  
 
-                    🔹 *Job:* ${env.JOB_NAME}  
-                    🔹 *Build #:* ${env.BUILD_NUMBER}  
-                    🔹 *Branch:* ${branchName}  
-                    🔹 *Commit:* ${commitId} by ${commitAuthor}  
-                    🔹 *Message:* ${commitMsg}  
-                    🔹 *Status:* ${buildStatus}  
-                    🔹 *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
-                    🔹 *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
-                    🔹 *Console Logs:* [View Logs](${consoleLogLink})   
-                    """,
+🔹 *Job:* ${env.JOB_NAME}  
+🔹 *Build #:* ${env.BUILD_NUMBER}  
+🔹 *Branch:* ${branchName}  
+🔹 *Commit:* ${commitId} by ${commitAuthor}  
+🔹 *Message:* ${commitMsg}  
+🔹 *Status:* SUCCESS  
+🔹 *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
+🔹 *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
+🔹 *Console Logs:* [View Logs](${consoleLogLink})  
+""",
                     status: 'SUCCESS',
                     color: '#00FF00'
                 )
@@ -177,29 +177,26 @@ pipeline {
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
                 def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
+                def consoleLogLink = "${env.BUILD_URL}console"
 
                 office365ConnectorSend(
                     webhookUrl: TEAMS_HOOK,
                     message: """❌ **Build Failed**  
-                    🔹 *Job:* ${env.JOB_NAME}  
-                    🔹 *Build #:* ${env.BUILD_NUMBER}  
-                    🔹 *Branch:* ${branchName}  
-                    🔹 *Commit:* ${commitId} by ${commitAuthor}  
-                    🔹 *Message:* ${commitMsg}  
-                    """,
+
+🔹 *Job:* ${env.JOB_NAME}  
+🔹 *Build #:* ${env.BUILD_NUMBER}  
+🔹 *Branch:* ${branchName}  
+🔹 *Commit:* ${commitId} by ${commitAuthor}  
+🔹 *Message:* ${commitMsg}  
+🔹 *Console Logs:* [View Logs](${consoleLogLink})  
+""",
                     status: 'FAILURE',
-                    color: '#FF0000',
-                    potentialAction: [
-                        [
-                            '@type': 'OpenUri',
-                            'name': '🔎 View Build',
-                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}" ]]
-                        ]
-                    ]
+                    color: '#FF0000'
                 )
             }
         }
     }
 }
+
 
 }
