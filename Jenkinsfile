@@ -133,48 +133,37 @@ pipeline {
     post {
     success {
         withCredentials([string(credentialsId: 'fintech-webhook', variable: 'TEAMS_HOOK')]) {
-            script {
+           script {
+                // Collect Git info
                 def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
                 def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
 
-                // Artifact & Docker links
+                // Artifact & logs
                 def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
                 def artifactId = "vLink"
                 def version = "${env.BUILD_NUMBER}v-${env.BUILD_TIMESTAMP}"
                 def artifactFileName = "${artifactId}-${version}.war"
                 def nexusArtifactLink = "${nexusBaseUrl}/QA/${artifactId}/${version}/${artifactFileName}"
-                def dockerImageLink = "http://${NEXUS_DOCKER_REGISTRY}/repository/${DOCKER_REPO}/"
+                def dockerImageLink = "http://192.168.56.11:8085/#browse/browse:${DOCKER_REPO}:${DOCKER_IMAGE_NAME}"
+                def consoleLogLink = "${env.BUILD_URL}console"
 
                 office365ConnectorSend(
                     webhookUrl: TEAMS_HOOK,
                     message: """✅ **Build Succeeded**  
+
                     🔹 *Job:* ${env.JOB_NAME}  
                     🔹 *Build #:* ${env.BUILD_NUMBER}  
                     🔹 *Branch:* ${branchName}  
                     🔹 *Commit:* ${commitId} by ${commitAuthor}  
                     🔹 *Message:* ${commitMsg}  
+                    🔹 [📦 Artifact](${nexusArtifactLink})  
+                    🔹 [🐳 Docker Image](${dockerImageLink})  
+                    🔹 [🔎 Console Logs](${consoleLogLink})  
                     """,
                     status: 'SUCCESS',
-                    color: '#00FF00',
-                    potentialAction: [
-                        [
-                            '@type': 'OpenUri',
-                            'name': '🔎 View Build',
-                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}" ]]
-                        ],
-                        [
-                            '@type': 'OpenUri',
-                            'name': '📦 View Artifact',
-                            'targets': [[ 'os': 'default', 'uri': nexusArtifactLink ]]
-                        ],
-                        [
-                            '@type': 'OpenUri',
-                            'name': '🐳 View Docker Image',
-                            'targets': [[ 'os': 'default', 'uri': dockerImageLink ]]
-                        ]
-                    ]
+                    color: '#00FF00'
                 )
             }
         }
@@ -203,7 +192,7 @@ pipeline {
                         [
                             '@type': 'OpenUri',
                             'name': '🔎 View Build',
-                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}tt" ]]
+                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}ff" ]]
                         ]
                     ]
                 )
