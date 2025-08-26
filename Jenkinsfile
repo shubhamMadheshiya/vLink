@@ -191,7 +191,7 @@ post {
 🔹 *Branch:* ${branchName}  
 🔹 *Commit:* ${commitId} by ${commitAuthor}  
 🔹 *Message:* ${commitMsg}  
-🔹 *Console Logs:* [View Logs](${consoleLogLink})  
+// 🔹 *Console Logs:* [View Logs](${consoleLogLink})  
 """,
                     status: 'FAILURE',
                     color: '#FF0000'
