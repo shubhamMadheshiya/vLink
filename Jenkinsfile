@@ -158,9 +158,10 @@ pipeline {
                     🔹 *Branch:* ${branchName}  
                     🔹 *Commit:* ${commitId} by ${commitAuthor}  
                     🔹 *Message:* ${commitMsg}  
-                    🔹 [📦 Artifact](${nexusArtifactLink})  
-                    🔹 [🐳 Docker Image](${dockerImageLink})  
-                    🔹 [🔎 Console Logs](${consoleLogLink})  
+                    🔹 *Status:* ${buildStatus}  
+                    🔹 *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
+                    🔹 *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
+                    🔹 *Console Logs:* [View Logs](${consoleLogLink})   
                     """,
                     status: 'SUCCESS',
                     color: '#00FF00'
@@ -192,7 +193,7 @@ pipeline {
                         [
                             '@type': 'OpenUri',
                             'name': '🔎 View Build',
-                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}ff" ]]
+                            'targets': [[ 'os': 'default', 'uri': "${env.BUILD_URL}" ]]
                         ]
                     ]
                 )
