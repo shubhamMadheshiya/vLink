@@ -139,6 +139,7 @@ post {
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
                 def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
+                def applicationURL = "http://192.168.56.18"
 
                 // Artifact & logs
                 def nexusBaseUrl = "http://192.168.56.11:9081/repository/vLink-repo"
@@ -162,6 +163,7 @@ post {
 🔹 *Artifact:* [${artifactFileName}](${nexusArtifactLink})  
 🔹 *Docker Image:* [${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}](${dockerImageLink})  
 🔹 *Console Logs:* [View Logs](${consoleLogLink})  
+🔹 *Application URL:* [${applicationURL}](${applicationURL})
 """,
                     status: 'SUCCESS',
                     color: '#00FF00'
@@ -178,6 +180,7 @@ post {
                 def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
                 def consoleLogLink = "${env.BUILD_URL}console"
+                
 
                 office365ConnectorSend(
                     webhookUrl: TEAMS_HOOK,
