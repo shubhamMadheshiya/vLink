@@ -139,7 +139,7 @@ post {
                 def commitId = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
                 def commitAuthor = sh(returnStdout: true, script: "git log -1 --pretty=%an").trim()
                 def branchName = env.BRANCH_NAME ?: "main"
-                def applicationURL = "http://192.168.56.18:3002/"
+                def applicationURL = "http://10.2.22.246:3002/"
 
                 // Artifact & logs
                 def nexusBaseUrl = "http://10.2.22.246:9081/repository/vLink-repo"
