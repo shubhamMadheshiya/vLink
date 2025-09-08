@@ -88,7 +88,7 @@
                                     <span class="icon-bar"></span>
                                     <span class="icon-bar"></span>
                                 </button>
-                                <a class="navbar-brand" href="${contextPath}/index">vLink</a>
+                                <a class="navbar-brand" href="${contextPath}/index">vLinkd</a>
 
                             </div>
                             <div class="navbar-collapse collapse">
