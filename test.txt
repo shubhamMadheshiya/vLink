@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-test is from github final CI/CD vLink-repo. wifi check 0809
-=======
-test is from github final CI/CD vLink-repo. wifi check 2 pc second
->>>>>>> 918fdecde06575fa2833c8f529ff0f89d7072d3b
+review 
